@@ -1,14 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, 
-  TouchableOpacity, TextInput, FlatList, ActivityIndicator, Keyboard, RefreshControl 
+  TouchableOpacity, TextInput, FlatList, ActivityIndicator, Keyboard, RefreshControl
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context'; // Fixed import
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import StockCard from '../components/StockCard';
-import { MOCK_DATA } from '../constants/mockData'; 
-
-// Import the service function
 import { searchStocks, fetchTopGainersLosers } from '../api/stockService'; 
 
 export default function ExploreScreen({ navigation }) {
@@ -16,15 +13,15 @@ export default function ExploreScreen({ navigation }) {
   const [searchResults, setSearchResults] = useState([]);
   const [loadingSearch, setLoadingSearch] = useState(false);
 
-  // --- NEW: State for Top Gainers/Losers ---
+  // Market Data State
   const [gainers, setGainers] = useState([]);
   const [losers, setLosers] = useState([]);
   const [loadingData, setLoadingData] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // --- 1. Fetch Top Gainers & Losers on Load ---
   const loadMarketData = useCallback(async () => {
     try {
+      if (!refreshing) setLoadingData(true);
       const data = await fetchTopGainersLosers();
       setGainers(data.top_gainers);
       setLosers(data.top_losers);
@@ -34,18 +31,17 @@ export default function ExploreScreen({ navigation }) {
       setLoadingData(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [refreshing]);
 
   useEffect(() => {
     loadMarketData();
-  }, [loadMarketData]);
+  }, []);
 
   const onRefresh = () => {
     setRefreshing(true);
     loadMarketData();
   };
 
-  // --- 2. Search Logic (Existing) ---
   useEffect(() => {
     const delayDebounceFn = setTimeout(async () => {
       if (searchQuery.length > 0) {
@@ -68,7 +64,6 @@ export default function ExploreScreen({ navigation }) {
         setSearchResults([]);
       }
     }, 500); 
-
     return () => clearTimeout(delayDebounceFn);
   }, [searchQuery]);
 
@@ -80,7 +75,6 @@ export default function ExploreScreen({ navigation }) {
     navigation.navigate('ViewAll', { title, items, type });
   };
 
-  // --- Render Search Results ---
   const renderSearchResults = () => {
     if (loadingSearch) {
       return <ActivityIndicator size="large" color="#000" style={{ marginTop: 20 }} />;
@@ -104,7 +98,7 @@ export default function ExploreScreen({ navigation }) {
         renderItem={({ item }) => (
           <StockCard 
             item={item} 
-            type="gainer" 
+            type="gainer"
             onPress={() => handlePress(item)}
           />
         )}
@@ -115,7 +109,6 @@ export default function ExploreScreen({ navigation }) {
   return (
     <SafeAreaView style={styles.container}>
       
-      {/* --- Header & Search Bar --- */}
       <View style={styles.headerContainer}>
         <Text style={styles.header}>Stocks App</Text>
         
@@ -136,11 +129,9 @@ export default function ExploreScreen({ navigation }) {
         </View>
       </View>
 
-      {/* --- Conditional Rendering --- */}
       {searchQuery.length > 0 ? (
         renderSearchResults()
       ) : (
-        // SHOW DASHBOARD
         <ScrollView 
           contentContainerStyle={styles.scrollContent}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -149,7 +140,6 @@ export default function ExploreScreen({ navigation }) {
              <ActivityIndicator size="large" color="#000" style={{marginTop: 50}} />
           ) : (
             <>
-              {/* Top Gainers */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Top Gainers</Text>
@@ -169,7 +159,6 @@ export default function ExploreScreen({ navigation }) {
                 </View>
               </View>
 
-              {/* Top Losers */}
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <Text style={styles.sectionTitle}>Top Losers</Text>
@@ -190,7 +179,6 @@ export default function ExploreScreen({ navigation }) {
               </View>
             </>
           )}
-
         </ScrollView>
       )}
 

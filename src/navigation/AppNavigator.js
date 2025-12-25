@@ -4,11 +4,10 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
 
-// Import screens
 import ExploreScreen from '../screens/ExploreScreen';
 import WatchlistScreen from '../screens/WatchlistScreen';
 import DetailsScreen from '../screens/DetailsScreen';
-import ViewAllScreen from '../screens/ViewAllScreen'; // <--- Import this
+import ViewAllScreen from '../screens/ViewAllScreen'; 
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -16,21 +15,16 @@ const Stack = createNativeStackNavigator();
 function HomeStack() {
   return (
     <Stack.Navigator>
-      {/* Explore is the main page */}
       <Stack.Screen 
         name="Explore" 
         component={ExploreScreen} 
-        options={{ headerShown: false }} // Hide default header to use our custom one
+        options={{ headerShown: false }} 
       />
-      
-      {/* Details page */}
       <Stack.Screen name="Details" component={DetailsScreen} />
-      
-      {/* View All page */}
       <Stack.Screen 
         name="ViewAll" 
         component={ViewAllScreen} 
-        options={({ route }) => ({ title: route.params.title })} // Dynamic title (e.g., "Top Gainers")
+        options={({ route }) => ({ title: route.params.title })} 
       />
     </Stack.Navigator>
   );

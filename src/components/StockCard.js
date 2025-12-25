@@ -1,10 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Import the icon library
+import { Ionicons } from '@expo/vector-icons';
 
 const screenWidth = Dimensions.get('window').width;
 
-// Add 'onRemove' to the props
 export default function StockCard({ item, type, onPress, onRemove }) {
   
   const isGainer = type === 'gainer';
@@ -16,7 +15,6 @@ export default function StockCard({ item, type, onPress, onRemove }) {
       style={[styles.card, { backgroundColor: cardBackgroundColor }]} 
       onPress={onPress}
     >
-      {/* Only show this button if onRemove is provided (i.e., in Watchlist) */}
       {onRemove && (
         <TouchableOpacity 
           style={styles.removeButton} 
@@ -39,8 +37,7 @@ export default function StockCard({ item, type, onPress, onRemove }) {
 
 const styles = StyleSheet.create({
   card: {
-    // We stick to your grid logic here
-    width: (screenWidth - 24) / 2 - 24, // Adjusted for 2 columns with spacing
+    width: (screenWidth - 24) / 2 - 24, // 2 columns
     padding: 16,
     margin: 8,
     borderRadius: 12,
@@ -51,7 +48,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    position: 'relative', // Needed for the absolute position of the trash icon
+    position: 'relative',
   },
   circle: {
     width: 40,
@@ -74,12 +71,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginTop: 4,
   },
-  // New Style for the Trash Button
   removeButton: {
     position: 'absolute',
     top: 8,
     right: 8,
-    zIndex: 10, // Ensure it sits on top of the card
-    padding: 4, // Makes the touch area slightly bigger
+    zIndex: 10,
+    padding: 4, 
   }
 });

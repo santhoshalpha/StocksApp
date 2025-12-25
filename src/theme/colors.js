@@ -1,19 +1,44 @@
-// src/theme/colors.js
-export const Colors = {
+export const colors = {
   light: {
-    background: '#FFFFFF',
+    background: '#ffffff',
+    surface: '#f0f0f0', // Cards, Search bars
     text: '#000000',
-    card: '#F5F5F5',
-    tint: '#2196F3',
-    success: '#4CAF50',
-    danger: '#F44336',
+    textSecondary: '#666666',
+    border: '#e0e0e0',
+    
+    // Gainer/Loser specific (Light Mode)
+    gainerBg: '#e6f4ea',
+    gainerText: '#137333',
+    loserBg: '#fce8e6',
+    loserText: '#c5221f',
+    
+    // Navigation
+    tabBarActive: 'tomato',
+    tabBarInactive: 'gray',
+    
+    // Action
+    primary: '#000000', // Buttons
+    onPrimary: '#ffffff'
   },
   dark: {
     background: '#121212',
-    text: '#FFFFFF',
-    card: '#1E1E1E',
-    tint: '#90CAF9',
-    success: '#66BB6A',
-    danger: '#EF5350',
+    surface: '#1e1e1e',
+    text: '#ffffff',
+    textSecondary: '#aaaaaa',
+    border: '#333333',
+    
+    // Gainer/Loser specific (Dark Mode - softer colors)
+    gainerBg: '#1b3a24', // Darker Green BG
+    gainerText: '#81c995', // Lighter Green Text
+    loserBg: '#3e1f1f', // Darker Red BG
+    loserText: '#f28b82', // Lighter Red Text
+
+    // Navigation
+    tabBarActive: '#ff6347',
+    tabBarInactive: '#666666',
+    
+    // Action
+    primary: '#ffffff',
+    onPrimary: '#000000'
   }
 };
