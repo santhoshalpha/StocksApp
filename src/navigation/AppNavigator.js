@@ -1,38 +1,52 @@
-// src/navigation/AppNavigator.js
-import React, { useContext } from 'react';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { AppContext } from '../context/AppContext';
+import { Ionicons } from '@expo/vector-icons'; // Expo comes with icons built-in!
 
-// Screens
+// Import our screens
 import ExploreScreen from '../screens/ExploreScreen';
 import WatchlistScreen from '../screens/WatchlistScreen';
 import DetailsScreen from '../screens/DetailsScreen';
-import ViewAllScreen from '../screens/ViewAllScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-function TabNavigator() {
+// Define the "Home" Stack
+// This allows us to navigate from Explore -> Details
+function HomeStack() {
   return (
-    <Tab.Navigator screenOptions={{ headerShown: false }}>
-      <Tab.Screen name="Explore" component={ExploreScreen} />
-      <Tab.Screen name="Watchlist" component={WatchlistScreen} />
-    </Tab.Navigator>
+    <Stack.Navigator>
+      <Stack.Screen name="Explore" component={ExploreScreen} options={{ title: 'Stocks App' }} />
+      <Stack.Screen name="Details" component={DetailsScreen} />
+    </Stack.Navigator>
   );
 }
 
+// Define the Main Tabs
 export default function AppNavigator() {
-  const { theme } = useContext(AppContext);
-
   return (
-    <NavigationContainer theme={theme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack.Navigator>
-        <Stack.Screen name="Home" component={TabNavigator} options={{ headerShown: false }} />
-        <Stack.Screen name="Details" component={DetailsScreen} />
-        <Stack.Screen name="ViewAll" component={ViewAllScreen} options={({ route }) => ({ title: route.params.title })} />
-      </Stack.Navigator>
+    <NavigationContainer>
+      <Tab.Navigator
+        screenOptions={({ route }) => ({
+          headerShown: false, // We hide the tab header because the Stack handles titles
+          tabBarActiveTintColor: 'tomato',
+          tabBarInactiveTintColor: 'gray',
+          // Logic to show different icons for different tabs
+          tabBarIcon: ({ focused, color, size }) => {
+            let iconName;
+            if (route.name === 'Home') {
+              iconName = focused ? 'home' : 'home-outline';
+            } else if (route.name === 'Watchlist') {
+              iconName = focused ? 'list' : 'list-outline';
+            }
+            return <Ionicons name={iconName} size={size} color={color} />;
+          },
+        })}
+      >
+        <Tab.Screen name="Home" component={HomeStack} />
+        <Tab.Screen name="Watchlist" component={WatchlistScreen} />
+      </Tab.Navigator>
     </NavigationContainer>
   );
 }

@@ -1,14 +1,12 @@
-// App.js
 import React from 'react';
-import { AppProvider } from './src/context/AppContext';
 import AppNavigator from './src/navigation/AppNavigator';
-import { StatusBar } from 'expo-status-bar';
+import { WatchlistProvider } from './src/context/WatchlistContext'; // Import the Provider
 
 export default function App() {
   return (
-    <AppProvider>
+    // Wrap the Navigator inside the Provider
+    <WatchlistProvider>
       <AppNavigator />
-      <StatusBar style="auto" />
-    </AppProvider>
+    </WatchlistProvider>
   );
 }
