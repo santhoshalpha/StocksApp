@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, FlatList, SafeAreaView } from 'react-native';
+import { View, StyleSheet, FlatList} from 'react-native';
 import StockCard from '../components/StockCard';
-
+import { SafeAreaView } from 'react-native-safe-area-context';
 export default function ViewAllScreen({ route, navigation }) {
   // Get the data passed from ExploreScreen
   const { items, type } = route.params;
