@@ -1,35 +1,42 @@
-// src/screens/ViewAllScreen.js
-import React, { useState, useContext } from 'react';
-import { View, FlatList, StyleSheet } from 'react-native';
+import React from 'react';
+import { View, StyleSheet, FlatList, SafeAreaView } from 'react-native';
 import StockCard from '../components/StockCard';
-import { AppContext } from '../context/AppContext';
-import { Colors } from '../theme/colors';
 
 export default function ViewAllScreen({ route, navigation }) {
-  const { items } = route.params;
-  const { theme } = useContext(AppContext);
-  const colors = Colors[theme];
-  
-  // Simulated Pagination (Client-side for this API)
-  const [displayCount, setDisplayCount] = useState(10);
-  const dataToShow = items.slice(0, displayCount);
+  // Get the data passed from ExploreScreen
+  const { items, type } = route.params;
+
+  const handlePress = (stock) => {
+    navigation.navigate('Details', { stock });
+  };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background, padding: 10 }}>
+    <SafeAreaView style={styles.container}>
       <FlatList
-        data={dataToShow}
-        keyExtractor={item => item.ticker}
-        numColumns={2}
-        columnWrapperStyle={{ justifyContent: 'space-between' }}
+        data={items}
+        keyExtractor={(item) => item.ticker}
+        contentContainerStyle={styles.listContent}
+        numColumns={2} // Grid layout (2 columns)
         renderItem={({ item }) => (
           <StockCard 
-            stock={item} 
-            onPress={() => navigation.navigate('Details', { symbol: item.ticker })} 
+            item={item} 
+            type={type} 
+            onPress={() => handlePress(item)} 
           />
         )}
-        onEndReached={() => setDisplayCount(prev => prev + 10)}
-        onEndReachedThreshold={0.5}
       />
-    </View>
+    </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  listContent: {
+    padding: 16,
+    // Add some bottom padding so the last items aren't cut off
+    paddingBottom: 40,
+  },
+});

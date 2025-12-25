@@ -1,14 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, SafeAreaView } from 'react-native';
-import { MOCK_DATA } from '../constants/mockData'; // Import our data
-import StockCard from '../components/StockCard';   // Import our component
+import { View, Text, StyleSheet, ScrollView, SafeAreaView, TouchableOpacity } from 'react-native';
+import { MOCK_DATA } from '../constants/mockData';
+import StockCard from '../components/StockCard';
 
 export default function ExploreScreen({ navigation }) {
   
-  // Helper function to handle card click
   const handlePress = (stock) => {
-    // Navigate to Details screen and pass the stock data
-    navigation.navigate('Details', { stock }); 
+    navigation.navigate('Details', { stock });
+  };
+
+  const handleViewAll = (title, items, type) => {
+    navigation.navigate('ViewAll', { title, items, type });
   };
 
   return (
@@ -19,9 +21,17 @@ export default function ExploreScreen({ navigation }) {
 
         {/* --- Top Gainers Section --- */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Top Gainers</Text>
+          {/* Header Row with "View All" */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Top Gainers</Text>
+            <TouchableOpacity onPress={() => handleViewAll("Top Gainers", MOCK_DATA.top_gainers, "gainer")}>
+              <Text style={styles.viewAllText}>View All</Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.grid}>
-            {MOCK_DATA.top_gainers.map((stock, index) => (
+            {/* ONLY SHOW TOP 4 */}
+            {MOCK_DATA.top_gainers.slice(0, 4).map((stock, index) => (
               <StockCard 
                 key={index} 
                 item={stock} 
@@ -34,9 +44,17 @@ export default function ExploreScreen({ navigation }) {
 
         {/* --- Top Losers Section --- */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Top Losers</Text>
+          {/* Header Row with "View All" */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Top Losers</Text>
+            <TouchableOpacity onPress={() => handleViewAll("Top Losers", MOCK_DATA.top_losers, "loser")}>
+              <Text style={styles.viewAllText}>View All</Text>
+            </TouchableOpacity>
+          </View>
+
           <View style={styles.grid}>
-            {MOCK_DATA.top_losers.map((stock, index) => (
+            {/* ONLY SHOW TOP 4 */}
+            {MOCK_DATA.top_losers.slice(0, 4).map((stock, index) => (
               <StockCard 
                 key={index} 
                 item={stock} 
@@ -69,14 +87,25 @@ const styles = StyleSheet.create({
   section: {
     marginBottom: 24,
   },
+  // New Header Logic for "Title" + "View All"
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+    paddingHorizontal: 8, // Align with the cards slightly
+  },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
-    marginLeft: 8,
+  },
+  viewAllText: {
+    fontSize: 14,
+    color: '#007AFF', // Standard iOS blue link color
+    fontWeight: '600',
   },
   grid: {
-    flexDirection: 'row', // Lay out items horizontally
-    flexWrap: 'wrap',     // Wrap to next line
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
 });
