@@ -31,7 +31,7 @@ export default function StockCard({ item, type, onPress }) {
 const styles = StyleSheet.create({
   card: {
     // 3. The Grid Logic: Screen Width / 2 columns - margins
-    width: (screenWidth / 2) - 24, 
+    width: (screenWidth - 24) / 4, 
     padding: 16,
     margin: 8,
     borderRadius: 12,
