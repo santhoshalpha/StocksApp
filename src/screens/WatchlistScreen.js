@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  View, Text, StyleSheet, SafeAreaView, ScrollView, 
+  View, Text, StyleSheet,  ScrollView, 
   TouchableOpacity, Modal, TextInput, Alert 
 } from 'react-native';
 import { useWatchlist } from '../context/WatchlistContext';
 import StockCard from '../components/StockCard';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function WatchlistScreen({ navigation }) {
   const { watchlists, createWatchlist, deleteWatchlist, removeFromWatchlist } = useWatchlist();
