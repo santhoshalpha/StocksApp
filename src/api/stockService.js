@@ -1,154 +1,121 @@
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// REPLACE WITH YOUR KEY
-const API_KEY = 'T86AT92YE9H3Q7J5'; 
-const BASE_URL = 'https://www.alphavantage.co/query';
+// --- 1. EXPANDED MOCK DATA (To make View All & Search work) ---
+const MOCK_GAINERS = [
+  { ticker: "NVDA", price: "880.15", change_amount: "125.40", change_percentage: "16.35%", name: "NVIDIA Corp" },
+  { ticker: "SMCI", price: "980.50", change_amount: "110.20", change_percentage: "12.50%", name: "Super Micro Computer" },
+  { ticker: "ARM", price: "145.20", change_amount: "15.40", change_percentage: "11.20%", name: "Arm Holdings" },
+  { ticker: "AMD", price: "180.50", change_amount: "12.30", change_percentage: "7.30%", name: "Advanced Micro Devices" },
+  { ticker: "PLTR", price: "25.40", change_amount: "1.80", change_percentage: "7.15%", name: "Palantir Technologies" },
+  { ticker: "DELL", price: "120.10", change_amount: "7.50", change_percentage: "6.65%", name: "Dell Technologies" },
+  { ticker: "COIN", price: "245.80", change_amount: "14.20", change_percentage: "6.15%", name: "Coinbase Global" },
+  { ticker: "META", price: "495.20", change_amount: "25.30", change_percentage: "5.40%", name: "Meta Platforms" },
+  { ticker: "NFLX", price: "610.00", change_amount: "28.50", change_percentage: "4.90%", name: "Netflix Inc" },
+  { ticker: "TSLA", price: "175.40", change_amount: "7.80", change_percentage: "4.65%", name: "Tesla Inc" },
+];
 
-const CACHE_DURATION_LONG = 24 * 60 * 60 * 1000; 
-const CACHE_DURATION_SHORT = 60 * 60 * 1000;
+const MOCK_LOSERS = [
+  { ticker: "PANW", price: "280.50", change_amount: "-25.40", change_percentage: "-8.35%", name: "Palo Alto Networks" },
+  { ticker: "SNOW", price: "160.20", change_amount: "-12.50", change_percentage: "-7.25%", name: "Snowflake Inc" },
+  { ticker: "LULU", price: "385.40", change_amount: "-28.10", change_percentage: "-6.80%", name: "Lululemon Athletica" },
+  { ticker: "NKE", price: "92.50", change_amount: "-5.80", change_percentage: "-5.90%", name: "Nike Inc" },
+  { ticker: "BA", price: "185.20", change_amount: "-10.50", change_percentage: "-5.35%", name: "Boeing Company" },
+  { ticker: "AAPL", price: "168.50", change_amount: "-5.20", change_percentage: "-3.00%", name: "Apple Inc" },
+  { ticker: "DIS", price: "110.50", change_amount: "-2.30", change_percentage: "-2.05%", name: "Walt Disney Co" },
+  { ticker: "PYPL", price: "62.40", change_amount: "-1.10", change_percentage: "-1.75%", name: "PayPal Holdings" },
+  { ticker: "SQ", price: "75.20", change_amount: "-1.20", change_percentage: "-1.60%", name: "Block Inc" },
+  { ticker: "HOOD", price: "18.50", change_amount: "-0.25", change_percentage: "-1.45%", name: "Robinhood Markets" },
+];
 
-// --- 1. MOCK DATA (Use this when API fails) ---
-const MOCK_GAINERS = {
-  top_gainers: [
-    { ticker: "AAPL", price: "175.00", change_percentage: "2.5%" },
-    { ticker: "NVDA", price: "450.00", change_percentage: "5.1%" },
-    { ticker: "TSLA", price: "240.00", change_percentage: "1.2%" },
-  ],
-  top_losers: [
-    { ticker: "MSFT", price: "320.00", change_percentage: "-1.5%" },
-    { ticker: "GOOGL", price: "130.00", change_percentage: "-0.8%" },
-  ]
-};
+// Combine for searching
+const ALL_MOCK_STOCKS = [...MOCK_GAINERS, ...MOCK_LOSERS];
 
-const MOCK_DETAILS = {
-  info: {
-    Symbol: "MOCK",
-    Name: "Mock Company Inc (Limit Reached)",
-    Description: "This data is shown because the API limit was reached. This ensures your UI still works for the assignment.",
-    Exchange: "NASDAQ",
-    Currency: "USD",
-    Country: "USA",
-    Sector: "Technology",
-    Industry: "Consumer Electronics",
-    MarketCapitalization: "2500000000000",
-    PERatio: "25.5",
-    Beta: "1.2",
-    DividendYield: "0.005",
-    "52WeekHigh": "200.00",
-    "52WeekLow": "100.00",
-    AnalystTargetPrice: "180.00"
-  },
-  prices: {
-    "2023-12-01": { "4. close": "150.00" },
-    "2023-11-30": { "4. close": "148.00" },
-    "2023-11-29": { "4. close": "145.00" },
-    "2023-11-28": { "4. close": "142.00" },
-    "2023-11-27": { "4. close": "146.00" },
-    "2023-11-26": { "4. close": "149.00" },
-    "2023-11-25": { "4. close": "152.00" },
-    "2023-11-24": { "4. close": "155.00" },
-    "2023-11-23": { "4. close": "160.00" },
-    "2023-11-22": { "4. close": "158.00" },
-  }
-};
+// Helper to simulate network delay (makes the app feel real)
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-// --- 2. CACHE LOGIC ---
-const getCachedData = async (key) => {
-  try {
-    const cached = await AsyncStorage.getItem(key);
-    if (!cached) return null;
-    const { data, timestamp, duration } = JSON.parse(cached);
-    if (Date.now() - timestamp < duration) return data;
-    return null;
-  } catch (e) { return null; }
-};
-
-const setCachedData = async (key, data, duration) => {
-  try {
-    await AsyncStorage.setItem(key, JSON.stringify({ data, timestamp: Date.now(), duration }));
-  } catch (e) { console.error("Cache Set Error", e); }
-};
-
-// --- 3. HELPER: Check for Limit ---
-const isLimitReached = (data) => {
-  return data.Note || data.Information || !data;
-};
-
-// --- 4. API FUNCTIONS ---
+// --- 2. SERVICE FUNCTIONS ---
 
 export const fetchTopGainersLosers = async () => {
-  const cacheKey = 'top_gainers_losers';
-  
-  // 1. Try Cache
-  const cached = await getCachedData(cacheKey);
-  if (cached) return cached;
-
-  try {
-    // 2. Try API
-    console.log("Fetching Gainers from API...");
-    const response = await axios.get(`${BASE_URL}?function=TOP_GAINERS_LOSERS&apikey=${API_KEY}`);
-    
-    if (isLimitReached(response.data)) {
-      console.warn("API Limit Hit - Using MOCK data");
-      return MOCK_GAINERS; // FALLBACK
-    }
-
-    if (response.data.top_gainers) {
-      await setCachedData(cacheKey, response.data, CACHE_DURATION_SHORT);
-      return response.data;
-    }
-  } catch (error) {
-    console.error("Network Error, using MOCK");
-  }
-  
-  return MOCK_GAINERS; // Final Fallback
+  await delay(500); // Simulate loading
+  return {
+    top_gainers: MOCK_GAINERS,
+    top_losers: MOCK_LOSERS
+  };
 };
 
 export const fetchStockDetails = async (symbol) => {
-  const cacheKey = `details_${symbol}`;
+  await delay(500); // Simulate loading
+
+  // 1. Try to find the stock in our list to get real-ish price
+  const stock = ALL_MOCK_STOCKS.find(s => s.ticker === symbol) || { 
+    ticker: symbol, 
+    price: "150.00", 
+    name: "Mock Company" 
+  };
+
+  // 2. Generate a mock chart (Historical Data) based on current price
+  const currentPrice = parseFloat(stock.price);
+  const mockPrices = {};
   
-  // 1. Try Cache
-  const cached = await getCachedData(cacheKey);
-  if (cached) return cached;
-
-  try {
-    // 2. Try API
-    console.log(`Fetching Details for ${symbol}...`);
+  // Generate last 10 days of data
+  for (let i = 0; i < 10; i++) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    const dateStr = date.toISOString().split('T')[0];
     
-    // We do ONE request at a time to be safer, instead of Promise.all
-    const overview = await axios.get(`${BASE_URL}?function=OVERVIEW&symbol=${symbol}&apikey=${API_KEY}`);
-    if (isLimitReached(overview.data)) throw new Error("Limit Reached");
-
-    const daily = await axios.get(`${BASE_URL}?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${API_KEY}`);
-    if (isLimitReached(daily.data)) throw new Error("Limit Reached");
-
-    const data = {
-      info: overview.data,
-      prices: daily.data['Time Series (Daily)'] || {}
-    };
-
-    if (data.info.Symbol) {
-      await setCachedData(cacheKey, data, CACHE_DURATION_LONG);
-      return data;
-    }
-  } catch (error) {
-    console.warn(`API Limit/Error for ${symbol}, using MOCK.`);
+    // Random fluctuation +/- 5%
+    const randomFactor = 0.95 + Math.random() * 0.10; 
+    const historyPrice = (currentPrice * randomFactor).toFixed(2);
+    
+    mockPrices[dateStr] = { "4. close": historyPrice };
   }
 
-  // 3. Mock Fallback
-  // We modify the mock name so you know it's fake in the UI
-  const forcedMock = { ...MOCK_DETAILS };
-  forcedMock.info.Symbol = symbol;
-  forcedMock.info.Name = "MOCK DATA (" + symbol + ")";
-  return forcedMock;
+  // 3. Return the structure expected by DetailsScreen
+  return {
+    info: {
+      Symbol: stock.ticker,
+      Name: stock.name,
+      Description: "This is a mock description generated for development purposes. The Alpha Vantage API limit was likely reached, so we are serving this data locally.",
+      Exchange: "NASDAQ",
+      Currency: "USD",
+      Country: "USA",
+      Sector: "Technology",
+      Industry: "Consumer Electronics",
+      MarketCapitalization: "2.5T",
+      PERatio: "25.5",
+      Beta: "1.2",
+      DividendYield: "0.005",
+      "52WeekHigh": (currentPrice * 1.2).toFixed(2),
+      "52WeekLow": (currentPrice * 0.8).toFixed(2),
+      AnalystTargetPrice: (currentPrice * 1.1).toFixed(2)
+    },
+    prices: mockPrices
+  };
 };
 
 export const searchStocks = async (query) => {
+  await delay(300); // Simulate network delay
+  
   if (!query) return [];
-  try {
-    const response = await axios.get(`${BASE_URL}?function=SYMBOL_SEARCH&keywords=${query}&apikey=${API_KEY}`);
-    if (isLimitReached(response.data)) return [];
-    return response.data.bestMatches || [];
-  } catch (error) { return []; }
+  
+  const lowerQuery = query.toLowerCase();
+  
+  // Filter our mock list
+  const results = ALL_MOCK_STOCKS.filter(stock => 
+    stock.ticker.toLowerCase().includes(lowerQuery) || 
+    stock.name.toLowerCase().includes(lowerQuery)
+  );
+
+  // Map to the format expected by the API (so we don't break the UI)
+  return results.map(item => ({
+    "1. symbol": item.ticker,
+    "2. name": item.name,
+    "3. type": "Equity",
+    "4. region": "United States",
+    "5. marketOpen": "09:30",
+    "6. marketClose": "16:00",
+    "7. timezone": "UTC-04",
+    "8. currency": "USD",
+    "9. matchScore": "1.0000"
+  }));
 };
