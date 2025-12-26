@@ -1,7 +1,6 @@
 
 # StocksApp - Stock Tracking and Analysis
 
-A professional React Native mobile application for tracking real-time stock market data, built with Expo. This app replicates key features of major platforms like Groww, featuring interactive charts, watchlists, and robust error handling for demonstration purposes.
 
 ---
 
