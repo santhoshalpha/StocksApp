@@ -1,33 +1,29 @@
-
 # StocksApp - Stock Tracking and Analysis
 
+A professional React Native mobile application for tracking real-time stock market data, built with Expo. This app replicates key features of major trading platforms, featuring interactive charts, multi-watchlists, and robust error handling for demonstration purposes.
 
 ---
 
 ## Features
 
 ### 1. Explore and Discovery
-
-* **Top Gainers and Losers:** Real-time list of market movers.
-* **Smart Search:** Search for any stock (e.g., "NVDA", "Reliance") with logo integration.
-* **Stock Cards:** Dynamic logo fetching (via Parqet API) with automatic fallback to text initials if logos are missing.
+* **Top Gainers and Losers:** Real-time list of market movers fetched from Alpha Vantage.
+* **Smart Search:** Search functionality for stock symbols (e.g., "NVDA", "RELIANCE") with integrated logo fetching.
+* **Dynamic Stock Cards:** UI components that fetch official company logos via the Parqet API, with an automatic fallback to text initials if logos are unavailable.
 
 ### 2. Detailed Stock Analysis
-
 * **Interactive Charts:** Line graphs supporting multiple timeframes: 1D, 1W, 1M, 3M, 6M, 1Y.
-* **Smart Axis Logic:** The X-axis dynamically adjusts density to ensure labels are always visible (prevents missing axis labels on short ranges like 1 Week).
-* **Fundamentals:** Displays key metrics like P/E Ratio, Market Cap, Dividend Yield, 52W High/Low, and more.
+* **Smart Axis Logic:** Custom logic dynamically adjusts X-axis label density. It ensures labels are fully visible on short timeframes (like 1 Week) while preventing overcrowding on long timeframes (like 1 Year).
+* **Fundamentals:** Displays key financial metrics including P/E Ratio, Market Cap, Dividend Yield, and 52-Week High/Low.
 
 ### 3. Watchlist Management
-
-* **Multi-Watchlist Support:** Create and manage multiple watchlists (e.g., "Tech Stocks", "Long Term").
-* **Persistence:** All data is saved locally using AsyncStorage, so watchlists remain after closing the app.
+* **Multi-Watchlist Support:** Users can create and manage multiple distinct watchlists.
+* **Persistence:** All watchlist data is persisted locally using AsyncStorage, ensuring data remains available across app restarts.
 
 ### 4. Professional UI/UX
-
-* **Animated Splash Screen:** Custom animated intro that seamlessly transitions from the native launch screen.
-* **Toast Notifications:** Replaced yellow warnings with professional toast messages for errors or status updates.
-* **Demo Mode:** A robust fallback system. If the Alpha Vantage API rate limit is hit, the app silently switches to Mock Data so the user experience never crashes.
+* **Seamless Splash Screen:** A custom animated splash screen that transitions smoothly from the native launch screen, eliminating white flashes during load.
+* **Toast Notifications:** Professional toast messages provide user feedback for errors or status updates, replacing intrusive warning boxes.
+* **Demo Mode:** A robust fallback system designed for presentations. If the API rate limit is reached, the app automatically switches to local Mock Data, ensuring the application never crashes during a demo.
 
 ---
 
@@ -36,138 +32,69 @@
 * **Framework:** React Native (Expo SDK 54)
 * **Language:** JavaScript
 * **Navigation:** React Navigation (Native Stack and Bottom Tabs)
-* **State Management:** React Context API (WatchlistContext)
+* **State Management:** React Context API
 * **Local Storage:** @react-native-async-storage/async-storage
 * **Charting:** react-native-chart-kit
-* **Networking:** Fetch API with Alpha Vantage
+* **Networking:** Fetch API
 * **Build Tool:** EAS (Expo Application Services)
 
 ---
 
 ## Installation and Setup
 
-1. **Clone the repository:**
-```bash
-git clone https://github.com/your-username/stocksapp.git
-cd stocksapp
+1.  **Clone the repository**
+    git clone https://github.com/your-username/stocksapp.git
+    cd stocksapp
 
-```
+2.  **Install dependencies**
+    npm install
 
+3.  **Setup Environment Variables**
+    Create a .env file in the root directory and add your Alpha Vantage API key:
+    EXPO_PUBLIC_API_KEY=YOUR_API_KEY_HERE
 
-2. **Install dependencies:**
-```bash
-npm install
-
-```
-
-
-3. **Setup Environment Variables:**
-Create a `.env` file in the root directory:
-```env
-EXPO_PUBLIC_API_KEY=YOUR_ALPHA_VANTAGE_KEY
-
-```
-
-
-4. **Run the App:**
-```bash
-npx expo start --clear
-
-```
-
-
+4.  **Run the App**
+    npx expo start --clear
 
 ---
 
 ## Building the APK (Android)
 
-This project is configured for EAS Build to generate an installable APK for testing.
+This project is configured for EAS Build to generate an installable APK for internal testing.
 
-1. **Install EAS CLI:**
-```bash
-npm install -g eas-cli
+1.  **Install EAS CLI**
+    npm install -g eas-cli
 
-```
+2.  **Login to Expo**
+    eas login
 
-
-2. **Login to Expo:**
-```bash
-eas login
-
-```
-
-
-3. **Build the APK:**
-```bash
-eas build -p android --profile preview
-
-```
-
-
-*This uses the `preview` profile in `eas.json` to generate a universal `.apk` instead of an App Bundle.*
+3.  **Build the APK**
+    eas build -p android --profile preview
 
 ---
 
 ## Technical Documentation
 
-### 1. Robust API Handling (Demo Mode)
+### Robust API Handling (Demo Mode)
+To handle the strict rate limits of the Alpha Vantage free tier (5 calls/minute), the application implements a strict interceptor pattern. The `fetchFromApi` service detects rate limit errors and immediately triggers a fallback mechanism. This switches the data source to `src/constants/mockData.js` and notifies the user via a Toast message, allowing for uninterrupted navigation during testing or recording.
 
-The Alpha Vantage free tier has strict rate limits (5 calls/min). To ensure the app remains functional during demonstrations:
+### Caching Strategy
+To optimize network usage, the app implements a caching layer using AsyncStorage. Stock details and chart data are cached with a unique key format (`stock_cache_v9_strict_[SYMBOL]_[RANGE]`) and a 24-hour expiration. This prevents redundant network requests for recently viewed stocks.
 
-* **Interceptor:** The `fetchFromApi` function in `stockService.js` detects Rate Limit errors.
-* **Fallback:** If a limit is hit, it triggers a Toast notification ("Demo Mode Active") and returns locally stored Mock Data (`src/constants/mockData.js`).
-* **Result:** Users can browse stocks seamlessly; the app switches between Real and Mock data instantly as needed.
-
-### 2. Caching Strategy
-
-To conserve API calls:
-
-* **Key Format:** `stock_cache_v9_strict_[SYMBOL]_[RANGE]`
-* **Expiry:** Data is cached for 24 Hours.
-* **Logic:** Before making a network request, the app checks AsyncStorage. If valid data exists, it loads instantly.
-
-### 3. Chart Axis Fix
-
-A common issue with charting libraries is disappearing X-axis labels on small datasets (like "1 Week").
-
-* **Implementation:** In `DetailsScreen.js`, a custom filter logic was applied.
-* **Logic:** If data points are fewer than 12 (Short range), show all labels. If data points are greater than 12 (Long range), show every Nth label. This guarantees the graph always looks populated.
-
-### 4. Seamless Splash Screen
-
-To achieve a professional launch without a white flash:
-
-1. **Native Splash (app.json):** Configured with a Dark Background (#121212) and the static Logo.
-2. **Animated Splash (AnimatedSplashScreen.js):** A React component that mimics the native screen perfectly, then runs a Scale and Fade animation.
-3. **Result:** The user sees one continuous logo that animates open.
+### Chart Axis Optimization
+A custom filtering logic was applied to the charting component to resolve common rendering issues with small datasets. For short timeframes (e.g., 1 Week), the logic forces the display of all labels. For larger datasets, it algorithmically selects labels at even intervals to maintain readability.
 
 ---
 
 ## Project Structure
 
-```
-StocksApp/
-├── assets/                 # Images (Icons, Splash, Logos)
-├── src/
-│   ├── api/
-│   │   └── stockService.js # API calls, Caching, and Mock Fallback logic
-│   ├── components/
-│   │   └── StockCard.js    # Reusable card with Logo fetching
-│   ├── constants/
-│   │   └── mockData.js     # Fallback data for Demo Mode
-│   ├── context/
-│   │   └── WatchlistContext.js # Global state for saved stocks
-│   ├── navigation/
-│   │   └── AppNavigator.js # Tab and Stack navigators
-│   ├── screens/
-│   │   ├── AnimatedSplashScreen.js # Custom Intro Animation
-│   │   ├── ExploreScreen.js        # Home: Search, Top Lists
-│   │   ├── DetailsScreen.js        # Charts and Fundamentals
-│   │   ├── WatchlistScreen.js      # User's saved lists
-│   │   └── ViewAllScreen.js        # Grid view for lists
-│   └── theme/
-├── app.json                # Expo Configuration (Splash, Package Name)
-├── eas.json                # Build Configuration (APK settings)
-└── App.js                  # Entry point
-
-```
+* **assets/** - Static images including icons, splash screens, and logos.
+* **src/api/** - Contains `stockService.js` for API calls, caching logic, and mock data fallbacks.
+* **src/components/** - Reusable UI components such as `StockCard.js`.
+* **src/constants/** - Static data files including `mockData.js`.
+* **src/context/** - Global state management including `WatchlistContext.js`.
+* **src/navigation/** - Navigation configuration for Tabs and Stacks.
+* **src/screens/** - Main application screens (Explore, Details, Watchlist, Splash).
+* **src/theme/** - Centralized styling and color definitions.
+* **app.json** - Expo configuration including splash screen and package settings.
+* **eas.json** - Build profiles for EAS.
