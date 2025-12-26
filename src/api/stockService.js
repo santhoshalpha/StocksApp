@@ -1,15 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { MOCK_DATA } from '../constants/mockData'; 
+import Toast from 'react-native-toast-message';
+import { MOCK_DATA, MOCK_DETAILS, generateMockChartData } from '../constants/mockData'; 
 
-// --- CONFIGURATION ---
-const API_KEY = '6UBJIGIPKVTLMJBX'; // <--- PASTE YOUR KEY
+const API_KEY = process.env.EXPO_PUBLIC_API_KEY; 
 const BASE_URL = 'https://www.alphavantage.co/query';
-
-// --- CACHE ---
 const CACHE_PREFIX = 'stock_cache_v9_strict_'; 
-const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 Hours
+const CACHE_EXPIRY = 24 * 60 * 60 * 1000; 
 
-// --- HELPER: Cache ---
+const showToast = (message, subMessage) => {
+  if (Toast && Toast.show) {
+    Toast.show({ type: 'info', text1: message, text2: subMessage, position: 'top', visibilityTime: 4000 });
+  }
+};
+
 const getCachedData = async (key) => {
   try {
     const jsonValue = await AsyncStorage.getItem(CACHE_PREFIX + key);
@@ -27,64 +30,41 @@ const setCachedData = async (key, data) => {
   } catch (e) { console.warn("Cache Save Error:", e); }
 };
 
-// --- HELPER: API ---
 const fetchFromApi = async (params) => {
   try {
     const queryString = new URLSearchParams({ ...params, apikey: API_KEY }).toString();
     const response = await fetch(`${BASE_URL}?${queryString}`);
     const data = await response.json();
-    
-    if (data.Information && data.Information.includes('rate limit')) {
-      throw new Error('API_LIMIT_REACHED');
-    }
-    if (data['Error Message']) {
-      throw new Error('API_ERROR');
-    }
-    
+    if (data.Information && data.Information.includes('rate limit')) throw new Error('API_LIMIT_REACHED');
+    if (data['Error Message']) throw new Error('API_ERROR');
+    if (Object.keys(data).length === 0) throw new Error('EMPTY_DATA');
     return data;
-  } catch (error) {
-    console.error(`API Fail: ${params.function}`, error);
-    throw error;
-  }
+  } catch (error) { throw error; }
 };
 
-// --- 1. DETAILS ---
+//details for detilas page
 export const fetchStockDetails = async (symbol) => {
-  // 1. Check Cache
   const cached = await getCachedData(`details_${symbol}`);
   if (cached) return cached;
-
   try {
-    // 2. Real API Call (Parallel)
-    const [quoteData, overviewData] = await Promise.all([
-      fetchFromApi({ function: 'GLOBAL_QUOTE', symbol }),
-      fetchFromApi({ function: 'OVERVIEW', symbol })
-    ]);
-
+    const overviewData = await fetchFromApi({ function: 'OVERVIEW', symbol });
     const result = {
       ...overviewData, 
       Symbol: symbol,
       Name: overviewData.Name || symbol,
       Description: overviewData.Description || "Description unavailable.",
-      price: quoteData['Global Quote']?.['05. price'] || "0.00",
-      change_percentage: quoteData['Global Quote']?.['10. change percent'] || "0.00%"
     };
-
-    // 3. Save to Cache on Success
     await setCachedData(`details_${symbol}`, result);
     return result;
-
   } catch (error) {
-    console.warn(`Failed to fetch details for ${symbol}:`, error.message);
-    return null; // Return null so UI shows empty state instead of fake data
+    showToast(`Demo Mode: ${symbol}`, "Limit Reached - Using Mock Details");
+    return { ...MOCK_DETAILS, Symbol: symbol, Name: `${symbol} (Demo)`, price: "150.25", change_percentage: "1.5%" };
   }
 };
 
-// --- 2. CHART ---
+//graph
 export const fetchChartData = async (symbol, range) => {
   const cacheKey = `chart_${symbol}_${range}`;
-  
-  // 1. Check Cache
   const cached = await getCachedData(cacheKey);
   if (cached) return cached;
 
@@ -100,83 +80,81 @@ export const fetchChartData = async (symbol, range) => {
     const params = { function: functionName, symbol };
     if (range === '1D') params.interval = '5min';
 
-    // 2. Real API Call
     const data = await fetchFromApi(params);
     const timeSeries = data[dataKey];
-
     if (!timeSeries) throw new Error("No Data Received");
 
-    // 3. Process Data
     let formattedData = Object.keys(timeSeries).map(date => ({
         date: date,
         value: parseFloat(timeSeries[date]['4. close'])
     })).reverse();
 
-    if (range === '1W') formattedData = formattedData.slice(-7);
+    //range params
+    if (range === '1D') formattedData = formattedData.slice(-40);
+    else if (range === '1W') formattedData = formattedData.slice(-7);
     else if (range === '1M') formattedData = formattedData.slice(-22);
     else if (range === '3M') formattedData = formattedData.slice(-66);
+    else if (range === '6M') formattedData = formattedData.slice(-132);
+    else if (range === '1Y') formattedData = formattedData.slice(-260);
 
-    // 4. Nice Labels (Real Data Only)
-    const result = formattedData.map(item => {
+    //labelling
+    const result = formattedData.map((item, index) => {
         let label = "";
         const dateStr = item.date;
         
-        if (range === '1D') {
-            label = dateStr.split(' ')[1]?.slice(0, 5) || ""; 
-        } else if (range === '1W') {
-            const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-            label = days[new Date(dateStr).getUTCDay()]; 
-        } else if (range === '1M') {
-            const weekNum = Math.ceil(new Date(dateStr).getUTCDate() / 7);
-            label = `W${weekNum}`;
-        } else {
-            const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            label = months[new Date(dateStr).getUTCMonth()];
+        try {
+            if (range === '1D') {
+                //splits
+                const parts = dateStr.split(' ');
+                if (parts.length > 1) {
+                    label = parts[1].slice(0, 5); 
+                } else {
+                    // Fallback if no time component exists
+                    label = dateStr.slice(5); // 10-25
+                }
+            } else if (range === '1W') {
+                const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                label = days[new Date(dateStr).getUTCDay()]; 
+            } else if (range === '1M') {
+                 const d = new Date(dateStr);
+                 const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+                 label = `${d.getUTCDate()} ${months[d.getUTCMonth()]}`;
+            } else {
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                label = months[new Date(dateStr).getUTCMonth()];
+            }
+        } catch (e) {
+            //fall back to use index
+            label = `${index}`;
         }
-        return { value: item.value, label: label };
+        
+        // safetly label
+        return { value: item.value, label: label || "?" };
     });
 
-    // 5. Save to Cache
     await setCachedData(cacheKey, result);
     return result;
 
   } catch (error) {
-    console.warn(`Failed to fetch chart for ${symbol}:`, error.message);
-    return []; // Return empty array so chart is flat/empty, NO FAKE DATA
+    return generateMockChartData(range);
   }
 };
 
-// --- 3. TOP LISTS ---
+//top gainer and loser
 export const fetchTopGainersLosers = async () => {
   const cached = await getCachedData('top_gainers_losers');
   if (cached) return cached;
-
   try {
     const data = await fetchFromApi({ function: 'TOP_GAINERS_LOSERS' });
     const result = {
-      top_gainers: (data.top_gainers || []).map(item => ({
-        ticker: item.ticker,
-        price: item.price,
-        change_amount: item.change_amount,
-        change_percentage: item.change_percentage,
-      })),
-      top_losers: (data.top_losers || []).map(item => ({
-        ticker: item.ticker,
-        price: item.price,
-        change_amount: item.change_amount,
-        change_percentage: item.change_percentage,
-      }))
+      top_gainers: (data.top_gainers || []).map(item => ({ ticker: item.ticker, price: item.price, change_percentage: item.change_percentage })),
+      top_losers: (data.top_losers || []).map(item => ({ ticker: item.ticker, price: item.price, change_percentage: item.change_percentage }))
     };
-
     await setCachedData('top_gainers_losers', result);
     return result;
-
   } catch (error) {
-    // Only basic mock data if Top Gainers fails (to prevent empty home screen)
-    return { 
-      top_gainers: MOCK_DATA.top_gainers, 
-      top_losers: MOCK_DATA.top_losers 
-    };
+    showToast("Demo Mode", "Home Screen Mock Data Active");
+    return { top_gainers: MOCK_DATA.top_gainers, top_losers: MOCK_DATA.top_losers };
   }
 };
 
@@ -185,5 +163,7 @@ export const searchStocks = async (query) => {
   try {
     const data = await fetchFromApi({ function: 'SYMBOL_SEARCH', keywords: query });
     return data.bestMatches || [];
-  } catch (e) { return []; }
+  } catch (e) { 
+    return [{ "1. symbol": query.toUpperCase(), "2. name": `${query.toUpperCase()} Corp (Demo)` }];
+  }
 };

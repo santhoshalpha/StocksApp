@@ -16,7 +16,7 @@ export default function ViewAllScreen({ route, navigation }) {
         data={items}
         keyExtractor={(item) => item.ticker}
         contentContainerStyle={styles.listContent}
-        numColumns={2} // Grid layout (2 columns)
+        numColumns={2} // Grid layout 
         renderItem={({ item }) => (
           <StockCard 
             item={item} 
@@ -36,7 +36,6 @@ const styles = StyleSheet.create({
   },
   listContent: {
     padding: 16,
-    // Add some bottom padding so the last items aren't cut off
     paddingBottom: 40,
   },
 });

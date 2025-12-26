@@ -4,8 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const WatchlistContext = createContext();
 
 export const WatchlistProvider = ({ children }) => {
-  // State is now an array of "Watchlist Objects"
-  // Example: [{ id: '1', name: 'My First List', stocks: [] }]
+//state : array of objects
   const [watchlists, setWatchlists] = useState([]);
 
   useEffect(() => {

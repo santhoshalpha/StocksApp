@@ -42,7 +42,7 @@ export default function WatchlistScreen({ navigation }) {
     ]);
   };
 
-  // --- NEW: Remove Stock Logic ---
+ //remove stock-
   const handleRemoveStock = (stock) => {
     Alert.alert(
       "Remove Stock", 

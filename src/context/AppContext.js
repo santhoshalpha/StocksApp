@@ -1,14 +1,14 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// 1. Create the "Cloud"
+//main context 
 const WatchlistContext = createContext();
 
-// 2. Create the "Provider" (The component that wraps the whole app)
+// provider to wrap the memory
 export const WatchlistProvider = ({ children }) => {
   const [watchlist, setWatchlist] = useState([]);
 
-  // Load data from phone storage when app starts
+  //load the data when app loads from the mobile storage
   useEffect(() => {
     loadWatchlist();
   }, []);
@@ -39,7 +39,7 @@ export const WatchlistProvider = ({ children }) => {
 
   // Function to add a stock
   const addToWatchlist = (stock) => {
-    // Check if it's already there to avoid duplicates
+    // Check for duplicates
     const exists = watchlist.find(item => item.ticker === stock.ticker);
     if (!exists) {
       setWatchlist([...watchlist, stock]);
@@ -59,5 +59,5 @@ export const WatchlistProvider = ({ children }) => {
   );
 };
 
-// 3. Create a custom hook so it's easy to use
+// custom hook
 export const useWatchlist = () => useContext(WatchlistContext);
