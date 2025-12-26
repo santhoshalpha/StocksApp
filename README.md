@@ -1,6 +1,3 @@
-Here is the professional, plain-text `README.md` and technical documentation for your project, with all emojis removed.
-
----
 
 # StocksApp - Stock Tracking and Analysis
 
