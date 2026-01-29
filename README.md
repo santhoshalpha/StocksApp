@@ -1,4 +1,5 @@
-# StocksApp - Groww SDE intern
+# StocksApp - 
+SDE intern
 
 A professional React Native mobile application for tracking real-time stock market data, built with Expo. This app replicates key features of major trading platforms, featuring interactive charts, multi-watchlists, and robust error handling for demonstration purposes.
 
